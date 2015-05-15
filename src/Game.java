@@ -93,14 +93,52 @@ public class Game {
                             cursorPositionX++;}
                         break;
                     case '\r':
-
+                        char[][] map = new char[mapSize][mapSize];
                         for (GameObject object : objects) {
-                            if (cursorPositionY == object.getX() && cursorPositionX == object.getY()) {
-                                continue gameloop;}}
+                            map[object.getX()][object.getY()]=object.getCharacter();}
+
+                        if (map[cursorPositionY][cursorPositionX]!='\0') {
+                            continue gameloop;}
 
                         GameObject object = new GameObject(cursorPositionY, cursorPositionX, 1, (player1Go ? player : player2));
                         player1Go = !player1Go;
-                        objects.add(object);}}
+                        objects.add(object);
+
+
+                        char[] verticalCheck = new char[2*winAmount-1];
+                        for(int i = -winAmount + 1; i < winAmount; ++i){
+                            if (cursorPositionX+i<0) continue;
+                            if (cursorPositionX+i>=mapSize) continue;
+                            verticalCheck[i+winAmount-1]=map[cursorPositionY][cursorPositionX+i];}
+                        char[] cross1Check = new char[2*winAmount-1];
+                        for(int i = -winAmount + 1; i < winAmount; ++i){
+                            if (cursorPositionX+i<0) continue;
+                            if (cursorPositionY+i<0) continue;
+                            if (cursorPositionX+i>=mapSize) continue;
+                            if (cursorPositionY+i>=mapSize) continue;
+                            cross1Check[i+winAmount-1]=map[cursorPositionY+i][cursorPositionX+i];}
+                        char[] horizontalCheck = new char[2*winAmount-1];
+                        for(int i = -winAmount + 1; i < winAmount; ++i){
+                            if (cursorPositionY+i<0) continue;
+                            if (cursorPositionY+i>=mapSize) continue;
+                            horizontalCheck[i+winAmount-1]=map[cursorPositionY+1][cursorPositionX];}
+                        char[] cross2Check = new char[2*winAmount-1];
+                        for(int i = -winAmount + 1; i < winAmount; ++i){
+                            if (cursorPositionX+i<0) continue;
+                            if (cursorPositionY-i<0) continue;
+                            if (cursorPositionX+i>=mapSize) continue;
+                            if (cursorPositionY-i>=mapSize) continue;
+                            cross2Check[i+winAmount-1]=map[cursorPositionY-i][cursorPositionX+i];}
+
+                        if (checkWin(verticalCheck, (player1Go ? player : player2)) ||
+                                checkWin(cross1Check, (player1Go ? player : player2)) ||
+                                checkWin(horizontalCheck, (player1Go ? player : player2)) ||
+                                checkWin(cross2Check, (player1Go ? player : player2))){
+                            System.out.println("lol you win!");
+                            System.out.println((player1Go?"player 1":"PLAYER 1 NOT YOU"));
+                            running = false;
+                            return;}}}
+
             catch (IOException e) {
                 System.out.println("NO! I CANT READ YOUR INPUT! DEATH!");
                 return;}}}
@@ -108,17 +146,13 @@ public class Game {
     static boolean checkWin(char[] characters, char winChar) {
         int count = 0;
 
-        for(char character : characters)
-        {
+        for(char character : characters){
             if(character == winChar) {
-                ++count;
-            }
+                if (++count == 5) return true;}
             else {
-                count = 0;
-            }
-        }
+                count = 0;}}
 
-        return count >= 5;
+        return false;
     }
 
 }
