@@ -7,6 +7,7 @@ import jline.ConsoleReader;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Game {
 
@@ -19,28 +20,36 @@ public class Game {
     private static boolean player1Go = true;
     private static boolean running = true;
     private static ConsoleReader reader=null;
+    private static Drawer render = null;
+    private static boolean blinkShow = false;
+    private static Thread inThread;
+    private static Thread outThread;
+    private static String exitMessage = "";
 
     static public void main(String[] args) {
 
         try{
             reader = new ConsoleReader();}
         catch(IOException e){
-            System.out.println("NO! I CANT READ YOUR INPUT! DEATH!");
+        	exitMessage="NO! I CANT READ YOUR INPUT! DEATH!";
             running = false;
             return;}
-        Drawer render = new Drawer(mapSize, mapSize);
-        boolean blinkShow = false;
+        render = new Drawer(mapSize, mapSize);
+        
+        Thread inThread = new Thread(()->output());
+        Thread outThread = new Thread(()->input());
+        inThread.start();
+        outThread.start();
+        while(inThread.isAlive()) try {
+			inThread.join();} catch (InterruptedException e) {}
+        while(outThread.isAlive()) try {
+			outThread.join();} catch (InterruptedException e) {}
+        System.out.println(exitMessage);}
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                input();
-            }
-        }).start();
-
+    public static void output(){
         while(running) {
             try{
-                Thread.sleep(1000);}
+                Thread.sleep(300);}
             catch(InterruptedException e){}
 
             GameObject blinker=null;
@@ -53,27 +62,22 @@ public class Game {
             GameObject[] objectArray = new GameObject[0];
             ArrayList<GameObject> newObjects = new ArrayList<>(objects);
             if(blinker != null) {
-                newObjects.add(blinker);
-            }
+                newObjects.add(blinker);}
             objectArray = newObjects.toArray(objectArray);
 
-            for(int i = 0; i <= reader.getTermheight(); i++)
-            {
-                System.out.println();
-            }
+            for(int i = 0; i <= reader.getTermheight(); i++){
+                System.out.println();}
             System.out.println((player1Go?player:player2) + "'s turn");
             render.draw(objectArray);}}
-
+    
     public static void input() {
-
         char[] listenChars = new char[]{(char) 0x1B, 'w', 's', 'a', 'd', '\r'};
         gameloop:
         while (running) {
             try {
                 switch (reader.readCharacter(listenChars)) {
                     case 0x1B:
-                        System.out.println("adios mi amigo!");
-                        System.out.println("adeus meu amigo!");
+                    	exitMessage="adios mi amigo!\nadeus meu amigo!";
                         running = false;
                         return;
                     case 'w':
@@ -101,9 +105,9 @@ public class Game {
                             continue gameloop;}
 
                         GameObject object = new GameObject(cursorPositionY, cursorPositionX, 1, (player1Go ? player : player2));
-                        player1Go = !player1Go;
                         objects.add(object);
-
+                        
+                        map[cursorPositionY][cursorPositionX]=(player1Go ? player : player2);
 
                         char[] verticalCheck = new char[2*winAmount-1];
                         for(int i = -winAmount + 1; i < winAmount; ++i){
@@ -121,7 +125,7 @@ public class Game {
                         for(int i = -winAmount + 1; i < winAmount; ++i){
                             if (cursorPositionY+i<0) continue;
                             if (cursorPositionY+i>=mapSize) continue;
-                            horizontalCheck[i+winAmount-1]=map[cursorPositionY+1][cursorPositionX];}
+                            horizontalCheck[i+winAmount-1]=map[cursorPositionY+i][cursorPositionX];}
                         char[] cross2Check = new char[2*winAmount-1];
                         for(int i = -winAmount + 1; i < winAmount; ++i){
                             if (cursorPositionX+i<0) continue;
@@ -134,25 +138,24 @@ public class Game {
                                 checkWin(cross1Check, (player1Go ? player : player2)) ||
                                 checkWin(horizontalCheck, (player1Go ? player : player2)) ||
                                 checkWin(cross2Check, (player1Go ? player : player2))){
-                            System.out.println("lol you win!");
-                            System.out.println((player1Go?"player 1":"PLAYER 1 NOT YOU"));
+                        	exitMessage="lol you win!\n"+(player1Go?"player 1":"PLAYER 1 NOT YOU");
                             running = false;
-                            return;}}}
+                            return;}
+                        
+                		player1Go = !player1Go;}}
 
             catch (IOException e) {
-                System.out.println("NO! I CANT READ YOUR INPUT! DEATH!");
+            	exitMessage="NO! I CANT READ YOUR INPUT! DEATH!";
+                running = false;
                 return;}}}
 
     static boolean checkWin(char[] characters, char winChar) {
         int count = 0;
 
-        for(char character : characters){
-            if(character == winChar) {
+        for(int i = 0; i< characters.length; i++){
+            if(characters[i] == winChar) {
                 if (++count == 5) return true;}
             else {
                 count = 0;}}
 
-        return false;
-    }
-
-}
+        return false;}}
