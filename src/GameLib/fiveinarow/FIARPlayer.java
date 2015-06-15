@@ -1,84 +1,36 @@
-/**
- * Created by Wilson on 4/30/2015.
- */
-
-import GameLib.*;
-import jline.ConsoleReader;
+package GameLib.fiveinarow;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
-public class Game {
+import jline.ConsoleReader;
+import GameLib.Drawer;
+import GameLib.GameObject;
+import GameLib.archi.PartialAction;
+import GameLib.archi.Player;
 
-	public static boolean running=true;
-	
-    private static char player = 'O';
-    private static char player2 = 'X';
-    private static int winAmount = 5;
-    private static ArrayList<GameObject> objects = new ArrayList<GameObject>();
+public class FIARPlayer implements Player {
+
     private static int mapSize = 20;
-    private static int cursorPositionX = mapSize/2, cursorPositionY = mapSize/2;
-    private static boolean player1Go = true;
+    private static int cursorPositionX = mapSize/2
+    		, cursorPositionY = mapSize/2;
     private static ConsoleReader reader=null;
-    private static Drawer render = null;
-    private static boolean blinkShow = false;
-    private static Thread inThread;
-    private static Thread outThread;
-    private static String exitMessage = "";
-
-    static public void main(String[] args) {
+    
+	public FIARPlayer(){
 
         try{
             reader = new ConsoleReader();}
         catch(IOException e){
-        	exitMessage="NO! I CANT READ YOUR INPUT! DEATH!";
-            running = false;
-            return;}
-        render = new Drawer(mapSize, mapSize);
-        
-        Thread inThread = new Thread(()->output());
-        Thread outThread = new Thread(()->input());
-        inThread.start();
-        outThread.start();
-        while(inThread.isAlive()) try {
-			inThread.join();} catch (InterruptedException e) {}
-        while(outThread.isAlive()) try {
-			outThread.join();} catch (InterruptedException e) {}
-        System.out.println(exitMessage);}
-
-    public static void output(){
-        while(running) {
-            try{
-                Thread.sleep(300);}
-            catch(InterruptedException e){}
-
-            GameObject blinker=null;
-            if(blinkShow == false) {
-                blinkShow = true;
-                blinker = new GameObject(cursorPositionY, cursorPositionX, 1, '?');}
-            else {
-                blinkShow = false;}
-
-            GameObject[] objectArray = new GameObject[0];
-            ArrayList<GameObject> newObjects = new ArrayList<>(objects);
-            if(blinker != null) {
-                newObjects.add(blinker);}
-            objectArray = newObjects.toArray(objectArray);
-
-            for(int i = 0; i <= reader.getTermheight(); i++){
-                System.out.println();}
-            System.out.println((player1Go?player:player2) + "'s turn");
-            render.draw(objectArray);}}
-    
-    public static void input() {
-        char[] listenChars = new char[]{(char) 0x1B, 'w', 's', 'a', 'd', '\r'};
+            return;}        
+        new Thread(()->getInput()).start();}
+	
+	void getInput(){
+		char[] listenChars = new char[]{(char) 0x1B, 'w', 's', 'a', 'd', '\r'};
         gameloop:
-        while (running) {
+        while (Game.running) {
             try {
                 switch (reader.readCharacter(listenChars)) {
                     case 0x1B:
-                    	exitMessage="adios mi amigo!\nadeus meu amigo!";
                         running = false;
                         return;
                     case 'w':
@@ -149,14 +101,11 @@ public class Game {
             	exitMessage="NO! I CANT READ YOUR INPUT! DEATH!";
                 running = false;
                 return;}}}
+	
+	@Override
+	public FIARPartialAction getAction() {
+		
+		return null;
+	}
 
-    static boolean checkWin(char[] characters, char winChar) {
-        int count = 0;
-
-        for(int i = 0; i< characters.length; i++){
-            if(characters[i] == winChar) {
-                if (++count == 5) return true;}
-            else {
-                count = 0;}}
-
-        return false;}}
+}
